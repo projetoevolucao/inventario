@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Inventário da Armadura — Projeto Evolução</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Spectral:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0807;
+    --bg-2:#0d0a08;
+    --ink:#ece5d6;
+    --ink-dim:#988e7d;
+    --ink-faint:#5a5249;
+    --amber:#d3a341;
+    --amber-bright:#e8bd5a;
+    --amber-deep:#7c5a1d;
+    --line:rgba(211,163,65,.16);
+    --line-soft:rgba(236,229,214,.07);
+    --serif:"Spectral",Georgia,serif;
+    --display:"Cormorant Garamond",Georgia,serif;
+    --mono:"Space Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--serif);
+    font-weight:300;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+    min-height:100%;
+  }
+  /* chiaroscuro light pool */
+  .glow{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(211,163,65,.16) 0%, rgba(211,163,65,.05) 26%, transparent 55%),
+      radial-gradient(80% 60% at 50% 120%, rgba(124,90,29,.08) 0%, transparent 60%);
+  }
+  /* vignette */
+  .vignette{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(115% 95% at 50% 42%, transparent 38%, rgba(0,0,0,.55) 82%, rgba(0,0,0,.85) 100%);
+  }
+  /* film grain */
+  .grain{
+    position:fixed;inset:-50%;z-index:2;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain 7s steps(6) infinite;
+  }
+  @keyframes grain{
+    0%{transform:translate(0,0)}10%{transform:translate(-3%,-4%)}30%{transform:translate(2%,-2%)}
+    50%{transform:translate(-2%,3%)}70%{transform:translate(3%,2%)}90%{transform:translate(-3%,1%)}100%{transform:translate(0,0)}
+  }
+  .stage{
+    position:relative;z-index:3;
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:42px 22px 64px;
+  }
+  .wrap{width:100%;max-width:660px;margin:0 auto}
+
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;font-weight:400;
+    letter-spacing:.42em;text-transform:uppercase;color:var(--amber);
+    opacity:.85;
+  }
+  .rule{height:1px;background:var(--line);border:0;margin:26px 0}
+
+  /* ---------- COVER ---------- */
+  #cover{text-align:left}
+  #cover .eyebrow{display:block;margin-bottom:34px}
+  .cover-title{
+    font-family:var(--display);font-weight:600;color:var(--ink);
+    font-size:clamp(48px,13vw,86px);line-height:.96;letter-spacing:-.01em;
+  }
+  .cover-title em{font-style:italic;color:var(--amber);font-weight:600}
+  .cover-sub{
+    margin-top:30px;font-size:clamp(16px,4.4vw,19px);color:var(--ink-dim);
+    max-width:52ch;line-height:1.62;
+  }
+  .cover-note{
+    margin-top:22px;font-family:var(--serif);font-style:italic;
+    font-size:15px;color:var(--ink-faint);max-width:48ch;
+  }
+  .btn{
+    font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--bg);background:var(--amber);
+    border:0;border-radius:2px;padding:17px 30px;cursor:pointer;
+    transition:transform .25s cubic-bezier(.2,.7,.2,1),background .25s,box-shadow .25s;
+    box-shadow:0 0 0 rgba(211,163,65,0);
+  }
+  .btn:hover{background:var(--amber-bright);transform:translateY(-2px);box-shadow:0 14px 34px -16px rgba(211,163,65,.7)}
+  .btn:active{transform:translateY(0)}
+  .cover-cta{margin-top:40px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .cover-meta{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-faint);text-transform:uppercase}
+
+  /* ---------- QUIZ ---------- */
+  #quiz{display:none}
+  .progress-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  .q-count{font-family:var(--mono);font-size:12px;letter-spacing:.3em;color:var(--ink-dim)}
+  .q-count b{color:var(--amber);font-weight:700}
+  .q-label{font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint)}
+  .bar{height:1px;width:100%;background:var(--line-soft);position:relative;overflow:hidden}
+  .bar-fill{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--amber-deep),var(--amber));transition:width .5s cubic-bezier(.4,.8,.2,1)}
+  .q-card{margin-top:54px}
+  .q-text{
+    font-family:var(--display);font-weight:500;color:var(--ink);
+    font-size:clamp(27px,7.2vw,40px);line-height:1.16;letter-spacing:-.005em;
+  }
+  .scale{margin-top:42px;display:flex;flex-direction:column;gap:10px}
+  .opt{
+    text-align:left;width:100%;cursor:pointer;
+    font-family:var(--serif);font-size:16px;color:var(--ink-dim);
+    background:rgba(236,229,214,.022);
+    border:1px solid var(--line-soft);border-radius:3px;
+    padding:15px 18px;display:flex;align-items:center;gap:15px;
+    transition:border-color .2s,background .2s,color .2s,transform .15s;
+  }
+  .opt:hover{border-color:var(--line);background:rgba(211,163,65,.05);color:var(--ink)}
+  .opt .tick{
+    width:13px;height:13px;border-radius:50%;border:1px solid var(--ink-faint);
+    flex:0 0 auto;transition:all .2s;position:relative;
+  }
+  .opt.sel{border-color:var(--amber);background:rgba(211,163,65,.1);color:var(--ink)}
+  .opt.sel .tick{border-color:var(--amber);background:var(--amber);box-shadow:0 0 12px -2px var(--amber)}
+  .q-back{
+    margin-top:34px;display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+    font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-faint);background:none;border:0;transition:color .2s;
+  }
+  .q-back:hover{color:var(--ink-dim)}
+  .q-back[hidden]{display:none}
+
+  /* ---------- RESULT ---------- */
+  #result{display:none}
+  .res-eyebrow{display:block;margin-bottom:18px}
+  .res-arch{font-family:var(--mono);font-size:12px;letter-spacing:.34em;color:var(--ink-dim);text-transform:uppercase}
+  .res-name{
+    font-family:var(--display);font-weight:600;color:var(--amber);
+    font-size:clamp(40px,10vw,64px);line-height:1;letter-spacing:-.01em;margin-top:8px;
+  }
+  .res-mirror{
+    margin-top:20px;font-family:var(--serif);font-style:italic;
+    font-size:clamp(17px,4.6vw,21px);color:var(--ink);line-height:1.5;max-width:50ch;
+  }
+  .bars{margin:40px 0 8px;display:flex;flex-direction:column;gap:16px}
+  .brow{display:flex;flex-direction:column;gap:7px}
+  .btop{display:flex;justify-content:space-between;align-items:baseline}
+  .bname{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-dim)}
+  .bname.lead{color:var(--amber)}
+  .bpct{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .btrack{height:2px;background:rgba(236,229,214,.06);position:relative;overflow:hidden}
+  .bval{position:absolute;left:0;top:0;height:100%;width:0;background:rgba(152,142,125,.4);transition:width 1s cubic-bezier(.3,.8,.2,1)}
+  .bval.lead{background:linear-gradient(90deg,var(--amber-deep),var(--amber-bright));box-shadow:0 0 10px -1px rgba(211,163,65,.5)}
+
+  .block{margin-top:34px}
+  .block h4{
+    font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:11px;
+  }
+  .block p{font-size:clamp(16px,4.3vw,18px);color:var(--ink);line-height:1.66;max-width:58ch}
+  .secondary{
+    margin-top:34px;padding:18px 20px;border-left:2px solid var(--line);
+    background:rgba(211,163,65,.03);font-size:15px;color:var(--ink-dim);line-height:1.55;
+  }
+  .secondary b{color:var(--ink);font-weight:400;font-style:italic}
+
+  .bridge{margin-top:54px;padding-top:42px;border-top:1px solid var(--line)}
+  .bridge .eyebrow{display:block;margin-bottom:18px}
+  .bridge p{font-size:clamp(16px,4.3vw,18px);color:var(--ink);line-height:1.66;max-width:58ch}
+  .bridge p + p{margin-top:16px;color:var(--ink-dim)}
+  .res-cta{margin-top:34px;display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+  .btn-line{font-family:var(--serif);font-size:14px;color:var(--ink-faint);font-style:italic}
+  .restart{
+    margin-top:50px;background:none;border:0;cursor:pointer;
+    font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);
+    transition:color .2s;
+  }
+  .restart:hover{color:var(--ink-dim)}
+
+  .brandmark{
+    text-align:center;margin-top:60px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:var(--ink-faint);opacity:.6;
+  }
+
+  .fade-up{animation:fadeUp .85s cubic-bezier(.2,.7,.2,1) both}
+  .fade-in{animation:fadeIn .6s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.2s}.d3{animation-delay:.42s}.d4{animation-delay:.62s}.d5{animation-delay:.82s}.d6{animation-delay:1.02s}
+
+  @media (max-width:480px){
+    .stage{padding:32px 18px 54px}
+    .cover-cta{gap:16px}
+    .btn{padding:15px 24px}
+  }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <div class="stage">
+    <div class="wrap">
+
+      <!-- COVER -->
+      <section id="cover">
+        <span class="eyebrow fade-up d1">Projeto Evolução</span>
+        <h1 class="cover-title fade-up d2">O Inventário<br><em>da Armadura</em></h1>
+        <p class="cover-sub fade-up d3">Todo homem constrói uma. A maioria esquece que era armadura — e passa a vida inteira achando que aquilo é ele mesmo. São dezesseis afirmações. Nenhuma resposta certa. Só a verdade sobre o que você vestiu pra sobreviver.</p>
+        <p class="cover-note fade-up d4">Responda rápido. A primeira reação é a verdadeira. A segunda já é a armadura ajustando a resposta.</p>
+        <div class="cover-cta fade-up d5">
+          <button class="btn" id="start">Começar o inventário</button>
+          <span class="cover-meta">4 minutos · não é pra todo mundo</span>
+        </div>
+      </section>
+
+      <!-- QUIZ -->
+      <section id="quiz">
+        <div class="progress-head">
+          <span class="q-count"><b id="qNum">01</b> / 16</span>
+          <span class="q-label">Inventário</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+        <div class="q-card" id="qCard">
+          <p class="q-text" id="qText"></p>
+          <div class="scale" id="scale"></div>
+          <button class="q-back" id="back" hidden>← Voltar</button>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section id="result"></section>
+
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var QUESTIONS = [
+    {t:"Em silêncio, você se orgulha do que sobreviveu — como se a dor tivesse te dado uma vantagem.", k:"trauma"},
+    {t:"Você decide o que vai sentir antes de sentir, e descarta o que não cabe no plano.", k:"controle"},
+    {t:"Você sente menos do que sentia — e faz tempo que parou de achar isso um problema.", k:"anestesia"},
+    {t:"Parte do seu valor vem de desprezar o homem comum.", k:"revolta"},
+    {t:"Confiar em alguém é uma conta de risco que quase nunca fecha a seu favor.", k:"controle"},
+    {t:"A ideia de não ter nada pra superar te assusta mais do que a próxima dificuldade.", k:"trauma"},
+    {t:"Obedecer a uma regra que você não escolheu parece rendição.", k:"revolta"},
+    {t:"Você funciona bem. Só não lembra a última vez que sentiu algo de verdade.", k:"anestesia"},
+    {t:"O cansaço virou ruído de fundo. Você nem escuta mais.", k:"anestesia"},
+    {t:"Você queimaria tudo antes de admitir que queria o que os outros querem.", k:"revolta"},
+    {t:"Você trabalha, em parte, pra não ter que sentir o que aparece quando você para.", k:"trauma"},
+    {t:"Quando perde o controle de uma situação, não é só ela que desaba — é o seu chão.", k:"controle"},
+    {t:"Sua identidade se apoia mais no que você recusa do que no que você construiu.", k:"revolta"},
+    {t:"Você desligou alguma coisa em algum momento — e nunca religou.", k:"anestesia"},
+    {t:"Você prefere ser temido a correr o risco de ser mal interpretado.", k:"controle"},
+    {t:"No fundo, você teme que largar a dor seja largar o que te faz forte.", k:"trauma"}
+  ];
+
+  var SCALE = [
+    {v:0,l:"Não sou eu"},
+    {v:1,l:"Quase nada"},
+    {v:2,l:"Às vezes"},
+    {v:3,l:"Bastante"},
+    {v:4,l:"Sou exatamente isso"}
+  ];
+
+  var ORDER = ["trauma","controle","anestesia","revolta"];
+  var SHORT = {trauma:"Trauma",controle:"Controle",anestesia:"Anestesia",revolta:"Revolta"};
+
+  var RESULTS = {
+    trauma:{
+      n:"01", name:"A Armadura do Sobrevivente",
+      mirror:"Como Bruce Wayne, você transformou a ferida em método. E nunca mais soube quem seria sem ela.",
+      whatis:"Você pegou a pior coisa que te aconteceu e fez dela combustível. Funcionou. Você é mais forte, mais difícil de derrubar do que quem nunca sangrou. Mas em algum ponto a dor deixou de ser algo que você carrega e virou a coisa de onde você tira o sentido.",
+      protects:"Enquanto você está superando alguma coisa, não precisa parar pra perguntar quem você seria sem o que superou. A luta te poupa dessa pergunta.",
+      cost:"Você não consegue descansar. Parar parece perigoso, porque é no silêncio que a ferida volta a falar. Então você arruma a próxima batalha antes da última esfriar — e chama isso de ambição."
+    },
+    controle:{
+      n:"02", name:"A Armadura do Estrategista",
+      mirror:"Como Michael Corleone, você não perdeu o controle. Você decidiu que nunca mais o perderia.",
+      whatis:"Você aprendeu cedo que o caos cobra de quem não se antecipa. Então você antecipa tudo: lê a sala, calcula o risco, decide o que vai sentir antes de sentir. Você raramente é pego de surpresa.",
+      protects:"Controle é como você não é traído, não é humilhado, não é pego desprevenido. Se você segura tudo, nada pode te quebrar pelo lado de fora.",
+      cost:"Ninguém te alcança. Você confunde ser temido com ser respeitado, e estar blindado com estar em paz. E a conta mais cara é silenciosa: você está sozinho dentro da fortaleza que ergueu pra não ser ferido."
+    },
+    anestesia:{
+      n:"03", name:"A Armadura do Operador",
+      mirror:"Como Thomas Shelby, você desligou o sentir pra conseguir funcionar. E nunca religou.",
+      whatis:"Em algum momento, sentir demais te atrapalhou. Então você baixou o volume. Hoje você funciona bem: resolve, entrega, aguenta. Só que aguentar virou o estado permanente, e você parou de notar o que ficou desligado junto.",
+      protects:"Não sentir é como você não desmorona no meio do expediente. A dormência te mantém de pé quando sentir seria um luxo que você acha que não pode pagar.",
+      cost:"Você funciona, mas não está presente. As pessoas perto de você sentem a sua ausência mesmo com você no mesmo cômodo. E você não lembra a última vez que sentiu algo de verdade — nem percebe que isso é uma perda."
+    },
+    revolta:{
+      n:"04", name:"A Armadura do Insurgente",
+      mirror:"Como Tyler Durden, você transformou a recusa em identidade. E virou refém dela.",
+      whatis:"Você olhou pra vida que esperavam de você e recusou. Recusou o roteiro, o homem médio, a obediência sem pergunta. Essa recusa te deu lucidez — você enxerga a jaula que a maioria nem vê.",
+      protects:"Desprezar o que os outros querem é como você não admite que talvez quisesse parte daquilo. Enquanto você está acima do jogo, não precisa arriscar perder dentro dele.",
+      cost:"Você se define mais pelo que recusa do que pelo que constrói. A revolta vira cela quando obedecer a qualquer coisa — até o que te faria bem — parece rendição. E o desprezo te separa não só da manada, mas de qualquer um que poderia te alcançar."
+    }
+  };
+
+  // ---- ELEMENTS / STATE ----
+  var coverEl=document.getElementById('cover');
+  var quizEl=document.getElementById('quiz');
+  var resultEl=document.getElementById('result');
+  var qText=document.getElementById('qText');
+  var scaleEl=document.getElementById('scale');
+  var qNum=document.getElementById('qNum');
+  var barFill=document.getElementById('barFill');
+  var backBtn=document.getElementById('back');
+  var qCard=document.getElementById('qCard');
+
+  var answers=new Array(QUESTIONS.length).fill(null);
+  var idx=0, lock=false;
+
+  function pad(n){return (n<10?'0':'')+n;}
+
+  function start(){
+    coverEl.style.display='none';
+    quizEl.style.display='block';
+    idx=0; render(); window.scrollTo(0,0);
+  }
+
+  function render(){
+    var q=QUESTIONS[idx];
+    qNum.textContent=pad(idx+1);
+    barFill.style.width=((idx)/QUESTIONS.length*100)+'%';
+    qText.textContent=q.t;
+    scaleEl.innerHTML='';
+    SCALE.forEach(function(s){
+      var b=document.createElement('button');
+      b.className='opt'+(answers[idx]===s.v?' sel':'');
+      b.type='button';
+      b.innerHTML='<span class="tick"></span><span>'+s.l+'</span>';
+      b.addEventListener('click',function(){choose(s.v);});
+      scaleEl.appendChild(b);
+    });
+    backBtn.hidden = (idx===0);
+    qCard.classList.remove('fade-in'); void qCard.offsetWidth; qCard.classList.add('fade-in');
+  }
+
+  function choose(v){
+    if(lock) return;
+    answers[idx]=v; lock=true;
+    var opts=scaleEl.querySelectorAll('.opt');
+    opts.forEach(function(o){o.classList.remove('sel');});
+    opts[v].classList.add('sel');
+    setTimeout(function(){
+      lock=false;
+      if(idx<QUESTIONS.length-1){ idx++; render(); window.scrollTo(0,0); }
+      else { finish(); }
+    },340);
+  }
+
+  backBtn.addEventListener('click',function(){
+    if(lock||idx===0) return;
+    idx--; render(); window.scrollTo(0,0);
+  });
+
+  function finish(){
+    barFill.style.width='100%';
+    var score={trauma:0,controle:0,anestesia:0,revolta:0};
+    QUESTIONS.forEach(function(q,i){ score[q.k]+=(answers[i]||0); });
+    var ranked=ORDER.slice().sort(function(a,b){return score[b]-score[a];});
+    var dom=ranked[0], sec=ranked[1];
+    showResult(dom,sec,score);
+  }
+
+  function showResult(dom,sec,score){
+    var r=RESULTS[dom];
+    var max=QUESTIONS.length/ORDER.length*4; // 16
+
+    var barsHtml='';
+    ORDER.forEach(function(k){
+      var pct=Math.round(score[k]/max*100);
+      var lead=(k===dom);
+      barsHtml+=
+        '<div class="brow">'+
+          '<div class="btop"><span class="bname'+(lead?' lead':'')+'">'+SHORT[k]+'</span><span class="bpct">'+pct+'%</span></div>'+
+          '<div class="btrack"><div class="bval'+(lead?' lead':'')+'" data-w="'+pct+'"></div></div>'+
+        '</div>';
+    });
+
+    resultEl.innerHTML=
+      '<span class="eyebrow res-eyebrow fade-up d1">Seu resultado</span>'+
+      '<div class="fade-up d2"><span class="res-arch">Arquétipo '+r.n+'</span>'+
+      '<h2 class="res-name">'+r.name+'</h2></div>'+
+      '<p class="res-mirror fade-up d3">'+r.mirror+'</p>'+
+      '<div class="bars fade-up d3">'+barsHtml+'</div>'+
+      '<div class="block fade-up d4"><h4>O que é</h4><p>'+r.whatis+'</p></div>'+
+      '<div class="block fade-up d4"><h4>O que ela protege</h4><p>'+r.protects+'</p></div>'+
+      '<div class="block fade-up d5"><h4>O preço que ela cobra</h4><p>'+r.cost+'</p></div>'+
+      '<div class="secondary fade-up d5">Sua armadura secundária é a <b>'+SHORT[sec]+'</b>. Ela é a que você veste quando a primeira falha — e quase ninguém percebe a troca.</div>'+
+      '<div class="bridge fade-up d6">'+
+        '<span class="eyebrow">O próximo passo</span>'+
+        '<p>O Inventário te disse <em>qual</em> armadura você veste. Ele não abre a sua a fundo — como ela foi forjada, o que exatamente ela protege, o preço que ela cobra de você todo mês em silêncio, e os primeiros movimentos pra deixar de ser refém dela.</p>'+
+        '<p>Isso é o Dossiê da Armadura. Não é pra todo mundo. É pra quem está pronto pra olhar pra dentro com a mesma frieza com que olha pra fora.</p>'+
+        '<div class="res-cta">'+
+          '<a class="btn" href="https://t.me/SEU_CANAL" target="_blank" rel="noopener">Entrar no Telegram do Projeto Evolução</a>'+
+          '<span class="btn-line">O Dossiê está lá dentro, fixado ao lado deste inventário.</span>'+
+        '</div>'+
+        '<button class="restart" id="restart">↻ Refazer o inventário</button>'+
+      '</div>'+
+      '<div class="brandmark fade-up d6">Projeto Evolução</div>';
+
+    quizEl.style.display='none';
+    resultEl.style.display='block';
+    window.scrollTo(0,0);
+
+    // animate bars
+    setTimeout(function(){
+      var vals=resultEl.querySelectorAll('.bval');
+      vals.forEach(function(v){ v.style.width=v.getAttribute('data-w')+'%'; });
+    },350);
+
+    document.getElementById('restart').addEventListener('click',function(){
+      answers=new Array(QUESTIONS.length).fill(null);
+      idx=0; resultEl.style.display='none'; resultEl.innerHTML='';
+      coverEl.style.display='block';
+      coverEl.querySelectorAll('.fade-up').forEach(function(e){e.style.animation='none'; void e.offsetWidth; e.style.animation='';});
+      window.scrollTo(0,0);
+    });
+  }
+
+  document.getElementById('start').addEventListener('click',start);
+})();
+</script>
+</body>
+</html>
